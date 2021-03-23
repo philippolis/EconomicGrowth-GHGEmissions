@@ -1,0 +1,658 @@
+---
+title: Economic Growth and Greenhouse Gas Emissions in Early vs Newly Industrialized
+  Countries
+author: "Philipp Holz"
+date: "25/02/2021"
+output:
+  pdf_document:
+    toc: yes
+    latex_engine: xelatex
+    fig_width: 4
+    fig_height: 4
+subtitle: SOCM029 - Assessment 2
+mainfont: Calibri Light
+fontsize: 12pt
+bibliography: References.json
+editor_options:
+  chunk_output_type: console
+---
+
+```{r document setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+                      message = FALSE, 
+                      warning = FALSE, 
+                      dev = "cairo_pdf")
+```
+
+```{r environment setup, include=FALSE}
+library(ggplot2)
+library(ggrepel)
+options(scipen = 999)
+library(ggpubr)
+library(dplyr)
+library(tidyr)
+library(scales)
+library(extrafont)
+library(haven)
+loadfonts()
+
+setwd("C:/Users/holzp/Dropbox/Obsidian Vaults/20201003_Obsidian Philipp/Projects/202102-Exeter-Data_Visualisation-Exercise_1")
+```
+
+```{r data, appendix = TRUE}
+# Loading in greenhouse gases data
+GHG_data <- read.csv("owid-co2-data.csv")
+
+# Loading in GDP data
+GDP_data <- read_dta("mpd2020.dta")
+
+# adding a total GDP in Trillion dollars column
+GDP_data <- GDP_data %>% 
+              mutate(gdptotal = (gdppc * pop * 1000)/1000000000000)
+
+```
+
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+
+
+# Introduction
+
+It is clear that globally, greenhouse gas (GHG) emissions must be reduced in order to avert the most catastrophic consequences of climate change. Greenhouse gas emissions from fossile fuels are largely the result of anthropogenic economic activity. [@masson-delmotteSummaryPolicymakers2018, 4] Consequently, measures to curb these emissions of GHG emissions are largely directed at the world's economies. Thus, typically in the global North, worried thoughts go out to more populous and quickly growing economies such as China and India, who are the "emerging economic giants of the world, [and] will play a significant, perhaps dominant, role in shaping the environmental outcomes for our planet in the 21st century." [@bawaChinaIndiaEnvironment2010]
+
+This report visualises statistical data related to the topic in order to investigate whether worries regarding the environmental impact of large emerging economies are justified, how they might be put into perspective, and what possible ways out of the climate effects of economic growth might look like.
+
+# About the data
+
+This report will employ two datasets. The first stems from *Our World in Data* and informs about CO2 and Greenhouse Gas emissions, such as annual emissions on a per country basis, cumulative emissions and per unit of Gross Domestic Product (GDP) emissions. [@ritchieCOGreenhouseGas2017] The second dataset stems from the *Maddison Project Database*, which provides information on comparative economic growth and income levels over the very long run. [@boltRebasingMaddisonNew2018]
+
+# Analysis
+
+In my analysis, I will proceed as follows. In a first step, I will reconstruct the point made regarding the potential environmental impact of lately industrialized economies. 
+
+To do so, firstly, I will make a selection of cases based on GDP, which will include early industrialized countries with high GDP per capita and lately industrialized countries, with equally large GDP but lower GDP per capita (Figure 1). Secondly, I will underline the connection between GDP and CO2 emissions to show that these countries do not only have the largest economies, but are also among the largest emitters in the world (Figure 2). Thirdly, I will show how GDP per capita has developed over time in these countries to illustrate, how quickly the size of lately industrialized economies is catching up relative to the size of their populations (Figure 3).
+
+In a second step, I will make two points to relativize the worries about the environmental impact of large, lately industrialized economies. The first of these will be a historic perspective, underlining the responsibility for the amounts of CO2 in our current atmosphere (Figure 4), the second will be regarding the increasing CO2-efficiency of economic output, showing, that a decoupling of GHG emissions and economic activity might eventually be possible. 
+
+**Figure 1** depicts the ten countries with the highest national GDP in 2018. The economies of China and the United States are almost on par, and with each 18 Trillion US-Dollar GDP in 2018 more than twice as large as that of their follow-up, India (8.84 Trillion US-Dollar). The graph then tails of to the right, with a quick succession of Japan, Germany, Russia, Indonesia, Brazil, France and the United Kingdom.
+
+As we can see, the Top 10 biggest economies consist of some countries, typically considered early industrialized countries, such as the United Kingdom, Germany and the United States, as well as some lately industrialized countries, such as China, India and Indonesia, which have both high populations and high GDP growth rates. These countries will be selected for our further analysis.
+
+```{r case selection with GDP, fig.width=7, fig.align="center", fig.cap="Top 10 biggest economies in 2018", appendix = TRUE}
+# Figure 1: Barplot on top 10 largest economies
+
+# only getting GDP data of year 2018 and excluding USSR
+GDP.top10 <- filter(GDP_data, year == 2018, countrycode != "SUN") %>%
+              arrange(desc(gdptotal))
+
+ggplot(data = head(GDP.top10, 10), 
+        aes(x = reorder(country, desc(gdptotal)), 
+            y = gdptotal, 
+            fill = reorder(country, desc(gdptotal)))) + 
+  geom_bar(stat = "summary_bin") +
+  scale_fill_manual(values = c("Brazil" = "#999999",
+                               "Japan" = "#999999",
+                               "Russian Federation" = "#999999",
+                               "France" = "#999999",
+                               "United States" = "#0072B2",
+                               "India" = "#CC79A7",
+                               "China" = "#D55E00",
+                               "Germany" = "#E69F00",
+                               "United Kingdom" = "#009E73",
+                               "Indonesia" = "#56B4E9")) +
+  geom_text(aes(label = round(gdptotal, 2)),
+                vjust = -0.5, 
+                size = 3.5, 
+                color = "black") +
+  theme(axis.text.x = element_text(size = 10, 
+                                   angle = 30, 
+                                   hjust=1, 
+                                   color = "black"),
+        legend.position = "none",
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()) +
+  xlab("") +
+  ylab("GDP (in Trillion US$)") +
+  scale_y_continuous(limits = c(0,19))
+
+```
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+
+
+**Figure 2** illustrates the strong relationship between the size of the economy, as by the GDP, and a country's CO2 emissions. In order to improve readability, both the scales of GDP and CO2 emissions have undergone a log transformation, to account for the large differences in the GDP and CO2 emissions among the countries depicted. As we can see, if put on a log-scale, annual GDP and CO2 emissions around the world have a positive, linear relationship. Our selected countries, China, the United States, India, Germany, Indonesia and the United Kingdom are not only among the largest economies of the world, but also among the top emitters. However, what this figure does not show, is how we can expect the CO2 emissions of these countries to develop in the future. 
+
+Let's compare, how the GDP per capita of these countries developed over time. Can we expect that these countries economies will eventually be e.g. four times larger than the economy of the United States?
+
+```{r relationship between GDP and CO2, fig.width=7, fig.align="center", fig.cap="Relationship between size of economy and GHG-emissions", appendix = TRUE}
+
+# Figure 2: Scatterplot on the relationship between GDP and CO2
+
+# year 2016 is complete, excluding "entire world" rows
+data.CO2andGDP <- GHG_data %>%
+                    filter(year == 2016 & 
+                           iso_code != "" &
+                           iso_code != "OWID_WRL") %>%
+                      summarise(country = country,
+                                gdp = co2/co2_per_gdp,
+                                co2 = co2,
+                                iso_code = iso_code)
+
+ggplot(data = data.CO2andGDP, aes(x = gdp/1000, y = co2)) +
+  geom_point(alpha = 0.5) +
+  xlab("GDP (in Trillion US$, log-scale)") +
+  ylab("CO2 (in Million tonnes, log-scale)") +
+  scale_y_continuous(trans = "log10") +
+  scale_x_continuous(trans = "log10") +
+  theme(legend.position = "none") +
+  geom_label_repel(data = subset(data.CO2andGDP, (
+                                               iso_code == "USA" |
+                                               iso_code == "IND" |
+                                               iso_code == "CHN" |
+                                               iso_code == "DEU" |
+                                               iso_code == "GBR" |
+                                               iso_code == "IDN")), 
+                   aes(label = country, 
+                       size = NULL, 
+                       fill = country, 
+                       color = country,
+                       segment.size = 0.5, segment.color = "black"), 
+                   nudge_x = -0.5, 
+                   nudge_y = -2.5, 
+                   direction = "y") +
+  scale_fill_manual(values = c("United States" = "#0072B2",
+                               "India" = "#CC79A7",
+                               "China" = "#D55E00",
+                               "Germany" = "#E69F00",
+                               "United Kingdom" = "#009E73",
+                               "Indonesia" = "#56B4E9")) +
+  scale_color_manual(values = c("United States" = "white",
+                               "India" = "white",
+                               "China" = "white",
+                               "Germany" = "black",
+                               "United Kingdom" = "white",
+                               "Indonesia" = "black"))
+
+```
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+` `  
+` ` 
+
+**Figure 3** shows the development of GDP per capita over time. As we know, the population of China and India are (almost) four times as large as the population of the USA. This means that if China and India were to reach the same GDP per capita, their economies would also be four times as large as that of the USA. This would potentially go in hand with equally high GHG emissions. 
+
+As we can see on the left part of the figure, the curves for GDP per capita in the group of USA, Germany and United Kingdom are similar, as are the curves in the group for China, India and Indonesia. The GDP per capita in the first group began to quickly rise in the 1950s, whereas the GDP per capita of China, India and Indonesia have only just begun to rise more quickly in the 1980s to 2000s. 
+
+Comparing this with the part on the right, where GDP per capita is put on a logarithmic scale, we can see that while the growth rates in the first group of countries remained about the same, the second group of countries achieves much higher growth rates, meaning that their GDP per capita is quickly catching up with the first group.
+
+```{r GDP per capita over time, fig.show="hold", out.width="50%", fig.cap="GDP per capita over time", appendix = TRUE}
+
+# Figure 3: Line Plot GDP per capita over time
+
+# only including data from our 6 selected countries
+GDP_cases <- filter(GDP_data, (countrycode == "CHN" |
+                               countrycode == "USA" |
+                               countrycode == "IND" |
+                               countrycode == "DEU" | 
+                               countrycode == "IDN" | 
+                               countrycode == "GBR") & year > 1850)
+
+# linear scale
+ggplot(data = GDP_cases, aes(x = year, 
+                             y = gdppc, 
+                             color = reorder(country, desc(gdptotal)))) +
+  geom_smooth(se = FALSE) +
+  xlab("Year") +
+  ylab("GDP per Capita (US$)") +
+  scale_y_continuous(limits = c(0,60000)) +
+  theme(legend.position = c(0.3, 0.6),
+        legend.background = element_rect(fill = "white", color = "black")) +
+  scale_color_manual("Country", values = c("Brazil" = "#999999",
+                               "Japan" = "#999999",
+                               "Russian Federation" = "#999999",
+                               "France" = "#999999",
+                               "United States" = "#0072B2",
+                               "India" = "#CC79A7",
+                               "China" = "#D55E00",
+                               "Germany" = "#E69F00",
+                               "United Kingdom" = "#009E73",
+                               "Indonesia" = "#56B4E9"))
+
+# logarithmic scale 
+ggplot(data = GDP_cases, aes(x = year, 
+                             y = gdppc, 
+                             color = reorder(country, desc(gdptotal)))) +
+  geom_smooth(se = FALSE) +
+  scale_y_continuous(trans = "log10") +
+  xlab("Year") +
+  ylab("GDP per Capita (US$, log scale)") +
+  theme(legend.position = "none") +
+  scale_color_manual("Country", values = c("Brazil" = "#999999",
+                               "Japan" = "#999999",
+                               "Russian Federation" = "#999999",
+                               "France" = "#999999",
+                               "United States" = "#0072B2",
+                               "India" = "#CC79A7",
+                               "China" = "#D55E00",
+                               "Germany" = "#E69F00",
+                               "United Kingdom" = "#009E73",
+                               "Indonesia" = "#56B4E9"))
+
+```
+At first sight, this could indeed be considered an alarming trend for the environment. However, what is also true is that, despite the large economies of China and India today, considering the early industrialization of the United States, Germany and the United Kingdom, these countries are responsible for most of the CO2 that is currently in the atmosphere.
+
+` `  
+` `   
+` `   
+` ` 
+` `  
+` `   
+` `   
+` ` 
+
+
+
+**Figure 4** shows the cumulative CO2 emissions of the six countries considered for this analysis, and which countries they can be attributed to. Even though, the economies of China, India and Indonesia combined are larger than that of the United States, Germany and the United Kingdom today (30.07 Trillion US$ and 24.57 Trillion US$ respectively), the United States, Germany and the United Kingdom are still responsible for an estimated 36% of the cumulative CO2 released from economic activity, versus only 17% in the group of China, India and Indonesia. 
+
+This is due to the early industrialization of the first group of countries. In 1960, the United States, Germany and the United Kingdom alone were responsible for 66% of the cumulative CO2 emissions from economic activity, compared to only 3% that were attributable to China, India and Indonesia. While the share of China, India and Indonesia can be expected to increase over the coming years, opening this historic perspective through the cumulative emissions relativizes the environmental impact that this is going to have, versus the impact that early industrialized countries carry into today.
+
+```{r cumulative co2, fig.width=7, fig.height=6, fig.align="center", fig.cap="Cumulative CO2 emissions over time", appendix = TRUE}
+# Figure 4: stacked area plot with six countries 
+
+# only including data from six countries
+CO2_cum <- GHG_data %>% filter(iso_code == "USA" |
+                                               iso_code == "IND" |
+                                               iso_code == "CHN" |
+                                               iso_code == "DEU" |
+                                               iso_code == "GBR" |
+                                               iso_code == "IDN")
+
+# as geom_label_repel requires a line plot and doesn't work with
+# the geom_area we need to create a line plot with respective sums,
+# where the United States' line is the sum of all six countries, the 
+# Chinese line is the sum of all six countries minus the United 
+# States' line, the German line is the sum of all six countries 
+# minus the United States' and the Chinese line, and so forth
+
+# creating the data frame for the underlying line plot
+USA_cum = c()
+CHN_cum = c()
+DEU_cum = c()
+GBR_cum = c()
+IND_cum = c()
+IDN_cum = c()
+
+for (i in 1:length(unique(CO2_cum$year))) { 
+  USA_cum[i] <- 
+    sum(CO2_cum[which(CO2_cum["year"]== (i + 1749)),"cumulative_co2"])
+  }
+
+for (i in 1:length(unique(CO2_cum$year))) {
+  CHN_cum[i] <- 
+    USA_cum[i] - sum(CO2_cum[which(CO2_cum["year"]== i + 1749 &
+                                     CO2_cum["country"] == "United States"),
+                             "cumulative_co2"])
+  }
+
+for (i in 1:length(unique(CO2_cum$year))) {
+  DEU_cum[i] <- 
+    CHN_cum[i] - sum(CO2_cum[which(CO2_cum["year"]== i + 1749 &
+                                     CO2_cum["country"] == "China"), 
+                             "cumulative_co2"])
+  }
+
+for (i in 1:length(unique(CO2_cum$year))) {
+  GBR_cum[i] <- 
+    DEU_cum[i] - sum(CO2_cum[which(CO2_cum["year"]== i + 1749 & 
+                                     CO2_cum["country"] == "Germany"), 
+                             "cumulative_co2"])
+  }
+
+for (i in 1:length(unique(CO2_cum$year))) {
+  IND_cum[i] <- 
+    GBR_cum[i] - sum(CO2_cum[which(CO2_cum["year"]== i + 1749 & 
+                                     CO2_cum["country"] == "United Kingdom"), 
+                             "cumulative_co2"])
+  }
+
+for (i in 1:length(unique(CO2_cum$year))) {
+  IDN_cum[i] <- 
+    IND_cum[i] - sum(CO2_cum[which(CO2_cum["year"]== i + 1749 &
+                                     CO2_cum["country"] == "India"), 
+                             "cumulative_co2"])
+  }
+
+country_col <- c(rep("United States", 270),
+                 rep("China", 270),
+                 rep("Germany", 270),
+                 rep("United Kingdom",270),
+                 rep("India", 270),
+                 rep("Indonesia", 270))
+
+year_col <- c(rep(1750:2019, 6))
+
+CO2_cum_col <- c(USA_cum, CHN_cum, DEU_cum, GBR_cum, IND_cum, IDN_cum)
+
+New_CO2_cum <- as.data.frame(cbind(country_col, year_col, CO2_cum_col))
+
+New_CO2_cum["CO2_cum_perc_col"] <- NA
+
+# Adding hard-coded cumulative CO2 percentages for 1960 from the GHG-dataset
+New_CO2_cum[which(
+  New_CO2_cum["year_col"]==1960 & 
+    New_CO2_cum["country_col"]=="United States"),
+  "CO2_cum_perc_col"] <- 38.833
+
+New_CO2_cum[which(
+  New_CO2_cum["year_col"]==1960 & 
+    New_CO2_cum["country_col"]=="China"),
+  "CO2_cum_perc_col"] <- 1.656
+
+New_CO2_cum[which(
+  New_CO2_cum["year_col"]==1960 & 
+    New_CO2_cum["country_col"]=="Germany"),
+  "CO2_cum_perc_col"] <- 11.819
+
+New_CO2_cum[which(
+  New_CO2_cum["year_col"]==1960 & 
+    New_CO2_cum["country_col"]=="United Kingdom"),
+  "CO2_cum_perc_col"] <- 14.584
+
+New_CO2_cum[which(
+  New_CO2_cum["year_col"]==1960 & 
+    New_CO2_cum["country_col"]=="India"),
+  "CO2_cum_perc_col"] <- 0.925
+
+New_CO2_cum[which(
+  New_CO2_cum["year_col"]==1960 & 
+    New_CO2_cum["country_col"]=="Indonesia"),
+  "CO2_cum_perc_col"] <- 0.249
+
+# Adding hard-coded cumulative CO2 percentages for 2018
+New_CO2_cum[which(
+  New_CO2_cum["year_col"]==2018 & 
+    New_CO2_cum["country_col"]=="United States"),
+  "CO2_cum_perc_col"] <- 25.052
+
+New_CO2_cum[which(
+  New_CO2_cum["year_col"]==2018 & 
+    New_CO2_cum["country_col"]=="China"),
+  "CO2_cum_perc_col"] <- 12.98
+
+New_CO2_cum[which(
+  New_CO2_cum["year_col"]==2018 & 
+    New_CO2_cum["country_col"]=="Germany"),
+  "CO2_cum_perc_col"] <- 5.647
+
+New_CO2_cum[which(
+  New_CO2_cum["year_col"]==2018 & 
+    New_CO2_cum["country_col"]=="United Kingdom"),
+  "CO2_cum_perc_col"] <- 4.792
+
+New_CO2_cum[which(
+  New_CO2_cum["year_col"]==2018 & 
+    New_CO2_cum["country_col"]=="India"),
+  "CO2_cum_perc_col"] <- 3.051
+
+New_CO2_cum[which(
+  New_CO2_cum["year_col"]==2018 & 
+    New_CO2_cum["country_col"]=="Indonesia"),
+  "CO2_cum_perc_col"] <- 0.797
+
+
+New_CO2_cum$year_col <- as.numeric(New_CO2_cum$year_col)
+New_CO2_cum$CO2_cum_col <- as.numeric(New_CO2_cum$CO2_cum_col)
+New_CO2_cum$country_col <- as.factor(New_CO2_cum$country_col)
+New_CO2_cum$CO2_cum_perc_col <- as.numeric(New_CO2_cum$CO2_cum_perc_col)
+
+New_CO2_cum2 <- New_CO2_cum
+
+New_CO2_cum2$country_col <- factor(New_CO2_cum2$country_col,
+                                   levels = c("United States",
+                                              "China",
+                                              "Germany",
+                                              "United Kingdom",
+                                              "India",
+                                              "Indonesia"))
+
+CO2_cum$country <- factor(CO2_cum$country, 
+                          levels = c("United States",
+                                     "China",
+                                     "Germany",
+                                     "United Kingdom",
+                                     "India",
+                                     "Indonesia"))
+
+# this plot uses two calls to geom_label_repel in order to add labels at two
+# positions along the x-axis, at year 1960 and at year 2018.
+
+plot1 <- ggplot() +
+  geom_area(data = CO2_cum, aes(x = year, 
+                                y = cumulative_co2/1000,
+                                fill = country)) +
+  xlab("Year") +
+  ylab("Cumulative CO2 (in Billion tonnes)") +
+  theme(legend.position = "none",
+        plot.margin = unit(c(0, 0,0,0), "cm")) +
+  scale_x_continuous(limits = c(1900,2018)) +
+  geom_label_repel(data = New_CO2_cum2 %>% filter(year_col == 1960),
+                     aes(x = year_col, 
+                         y = CO2_cum_col/1000,
+                         fill = country_col,
+                         color = country_col,
+                         label = scales::percent(
+                           round(CO2_cum_perc_col/100,2))),
+                     direction = "y",
+                     nudge_x = -40,
+                     nudge_y = 500,
+                     segment.color = "black") +
+  geom_label_repel(data = New_CO2_cum2 %>% filter(year_col == 2018),
+                     aes(x = year_col,
+                         y = CO2_cum_col/1000,
+                         fill = country_col,
+                         color = country_col,
+                         label = scales::percent(
+                           round(CO2_cum_perc_col/100,2))),
+                     direction = "y",
+                     nudge_x = -40,
+                     nudge_y = 200000,
+                     segment.color = "black") +
+  scale_fill_manual(values = c("United States" = "#0072B2",
+                               "India" = "#CC79A7",
+                               "China" = "#D55E00",
+                               "Germany" = "#E69F00",
+                               "United Kingdom" = "#009E73",
+                               "Indonesia" = "#56B4E9")) +
+  scale_color_manual(values = c("United States" = "white",
+                               "India" = "black",
+                               "China" = "white",
+                               "Germany" = "black",
+                               "United Kingdom" = "white",
+                               "Indonesia" = "black"))
+
+# because of the two-fold call of scale_fill_manual and 
+# scale_color_manual in the previous plot, the legend is 
+# generated twice, hence the theme(legend.position = "none")
+# argument and the following bit, which extracts a cleaner
+# legend from another plot to be added to the previous one
+
+GDP_cases <- filter(GDP_data, (countrycode == "CHN" |
+                               countrycode == "USA" |
+                               countrycode == "IND" |
+                               countrycode == "DEU" |
+                               countrycode == "IDN" |
+                               countrycode == "GBR") & year > 1850)
+
+GDP_cases$country <- factor(GDP_cases$country, 
+                            levels = c("United States",
+                                       "China",
+                                       "Germany",
+                                       "United Kingdom",
+                                       "India",
+                                       "Indonesia"))
+
+plot <- ggplot(data = GDP_cases, aes(x = year,
+                                     y = gdppc,
+                                     color = reorder(
+                                       country, desc(gdptotal)))) +
+  geom_smooth(se = FALSE) +
+  xlab("Year") +
+  ylab("GDP per Capita (US$)") +
+  scale_y_continuous(limits = c(0,60000)) +
+  theme(legend.position = "bottom",
+        legend.background = element_rect(fill = "white", color = "black"),
+        plot.margin = unit(c(0, 0, 0, 0),"cm")) +
+  scale_color_manual("Country", values = c("Brazil" = "#999999",
+                               "Japan" = "#999999",
+                               "Russian Federation" = "#999999",
+                               "France" = "#999999",
+                               "United States" = "#0072B2",
+                               "India" = "#CC79A7",
+                               "China" = "#D55E00",
+                               "Germany" = "#E69F00",
+                               "United Kingdom" = "#009E73",
+                               "Indonesia" = "#56B4E9"))
+
+legend <- as_ggplot(get_legend(plot)) +
+            theme(plot.margin = unit(c(0, 0,1,0), "cm"))
+
+# the following function was taken from
+# http://www.cookbook-r.com/Graphs/Multiple_graphs_on_one_page_%28ggplot2%29/
+# it adds the previous plot and the legend together
+
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+
+multiplot(plot1, legend, cols=1)
+
+```
+
+**Figure 5** shows a possible way to avert a continued steep increase in CO2 emissions that the previous graph showed. It shows the development of GHG-intensity[^1] of economic output over time. As we can see, GHG-intensity has described a similar curve for the countries included in this report. Over time, intensity rises, has one global maximum and eventually declines. The difference, however, is in the point in time, when GHG-intensity begins to rise, and at which intensity it peaks.
+
+[^1]: As measured in CO2 emissions per unit of GDP. GDP is adjusted for inflation and cross-country price differences (PPP-adjusted).
+
+```{r exploratory viz, fig.width=7, fig.align="center", fig.cap="Economic GHG-efficiency over time", appendix = TRUE}
+
+# Figure 5: Line chart on GHG-intensity
+
+data.year5 <- GHG_data %>%
+               filter(country == "United States" |
+                      country == "India" |
+                      country == "China" |
+                      country == "Germany" |
+                      country == "United Kingdom" |
+                      country == "Indonesia")
+
+ggplot(data = data.year5, aes(x = year, y = co2_per_gdp, color = country)) +
+  geom_smooth(size = 0.8, se = FALSE) +
+  scale_y_continuous(limits = c(0, 1.4),
+                     breaks = seq(0, 1.7, by = 0.2)) +
+  scale_x_continuous(limits = c(1850, 2018),
+                     breaks = seq(1850, 2020, by = 20)) +
+  xlab("Year") +
+  ylab("CO2 per GDP") +
+  theme(legend.title = element_blank(),
+        legend.background = element_rect(fill = "white", color = "black")) +
+  scale_color_manual("Country", values = c("Brazil" = "#999999",
+                               "Japan" = "#999999",
+                               "Russian Federation" = "#999999",
+                               "France" = "#999999",
+                               "United States" = "#0072B2",
+                               "India" = "#CC79A7",
+                               "China" = "#D55E00",
+                               "Germany" = "#E69F00",
+                               "United Kingdom" = "#009E73",
+                               "Indonesia" = "#56B4E9"))
+
+```
+
+While the United Kingdom, Germany and the United States have seen rising GHG-intensity quite early, with the advent of their industrialization in the 19th century, China, Indonesia and India have seen such a rise later in time, roughly in the second half of the 20th century. And, crucially, while the United Kingdom, Germany and the United States have seen extremely high GHG-intensities, the GHG-intensities of the second group are much below that. Instead, we can see how the GHG-intensity of e.g. Indonesia's economy climaxed right on par with where Germany and the UK are at current levels.
+
+So, while the previous plots have suggested that China, India and Indonesia would eventually *follow* the development that the United States, Germany and the United Kingdom have made, this figure actually suggests otherwise. Instead of going through the phase of a highly GHG-intense economy, China, India and Indonesia join right in with more CO2-efficient economies. Interestingly, the low-carbon technology transfer is indeed not anymore in North-South direction, and instead, the increase in indigenous innovation capabilities, especially in China, now means that increasingly, there are elements of reverse South-North technology transfer. This shows China's rising importance as well in combatting anthropogenic climate change. [@urbanChinaRiseChallenging2018]
+
+# Main Findings
+- We can expect that rising economies such as that of China, India and Indonesia will be major contributors to cumulative CO2 emissions in the coming years.
+- Despite having relatively smaller economies, early industrialized countries are currently still responsible for large parts of cumulative CO2 emissions.
+- Low-carbon technology helps to decouple economic output from GHG-emissions and is a potential way forward.
+
+
+# Conclusion
+
+This report shows the enormous growing potential that the economies of populous countries like China, India and Indonesia have and how economic output is closely related to GHG-emissions. Consequently, it asks, whether we should be worried regarding the potential increase in global GHG-emissions related to that economic activity. While it doesn't brush off these concerns, it puts them into perspective, by underlining that early industrialized countries still carry much of the weight of cumulative GHG-emissions and by showing that newly industrialized economies are equally CO2-efficient and even lead the way when it comes to low-carbon technologies, contributing to a potential decoupling of economic output from GHG-emissions. 
+
+# Bibliography
+
+<div id="refs"></div>
+
+` `   
+` ` 
+` `   
+` ` 
+
+# Appendix
+
+```{r, ref.label=knitr::all_labels(appendix == TRUE),echo=TRUE,eval=FALSE}
+```
+
